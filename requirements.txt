@@ -1,0 +1,16 @@
+fastapi
+uvicorn
+pillow
+
+torch
+transformers>=4.50.0
+accelerate
+peft
+safetensors
+sentencepiece
+
+bitsandbytes
+
+python-multipart
+
+

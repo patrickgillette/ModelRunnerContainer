@@ -1,0 +1,41 @@
+services:
+  gemma3-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gemma3-gpu-server
+    container_name: gemma3-gpu-server
+    ports:
+      - "8000:8000"
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - DEVICE_MAP=auto
+      - LOAD_IN_4BIT=1
+      - HF_HUB_DISABLE_PROGRESS_BARS=0
+      - TQDM_DISABLE=0
+      - PYTHONUNBUFFERED=1
+
+      # pull from HF instead of local path
+      - MODEL_ID=google/gemma-3-27b-it
+      - MAX_NEW_TOKENS=256
+
+      # HF auth + cache
+      - HF_TOKEN=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
+      - HF_HOME=/hf
+
+      # optional but helpful
+      - TRANSFORMERS_CACHE=/hf/transformers
+      - HF_HUB_CACHE=/hf/hub
+
+    volumes:
+      - ./hf_cache:/hf
+      - ./FineTuneGemma:/app/FineTuneGemma
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
