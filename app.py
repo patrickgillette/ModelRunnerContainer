@@ -22,12 +22,10 @@ def _startup():
 
 @app.get("/health")
 def health():
-    # Liveness: container is running
     return {"status": "ok"}
 
 @app.get("/ready")
 def ready():
-    # Readiness: model is actually loaded
     print("Readiness check...")
     with open(LOG_FILE, "a", encoding="utf-8") as log_f:
         log_f.write(f"Readiness check at {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
