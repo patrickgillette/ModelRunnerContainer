@@ -88,7 +88,7 @@ class Gemma3Generator:
 
         print("[Gemma3Generator] Processor loaded.", flush=True)
 
-        # ---- MODEL LOAD (LONG STEP) ----
+
         hb = Heartbeat("Loading Gemma3 model weights", interval=15)
         hb.start()
 
@@ -173,8 +173,7 @@ class Gemma3Generator:
                 padding=True,
             )
 
-        # If model is sharded (device_map="auto"), put inputs on the model’s “first” device.
-        # This is a common safe approach.
+
         if torch.cuda.is_available():
             try:
                 first_param_device = next(self.model.parameters()).device
@@ -192,14 +191,12 @@ class Gemma3Generator:
 
         s = raw.strip()
 
-        # Remove common wrappers
+        
         s = s.replace("<end_of_turn>", "").strip()
 
-        # If it's inside a ```...``` fence, prefer the fenced content
         if "```" in s:
             parts = s.split("```")
-            # parts looks like: [before, lang+newline+content, after, ...]
-            # Try each fenced section (odd indices) and fall back otherwise
+
             for i in range(1, len(parts), 2):
                 chunk = parts[i]
                 # drop optional language header (e.g. "json\n")
@@ -208,12 +205,12 @@ class Gemma3Generator:
                     if first_line.strip().lower() in {"json", "application/json"}:
                         chunk = rest
                 chunk = chunk.strip()
-                # if chunk already starts like JSON, attempt to extract from it
+
                 if chunk.startswith("{") or chunk.startswith("["):
                     s = chunk
                     break
 
-        # Find first { or [ that begins a JSON structure
+
         start = None
         for i, ch in enumerate(s):
             if ch in "{[":
@@ -225,7 +222,7 @@ class Gemma3Generator:
         opening = s[start]
         closing = "}" if opening == "{" else "]"
 
-        # Scan forward tracking nesting, while respecting strings/escapes
+
         depth = 0
         in_str = False
         esc = False
@@ -242,7 +239,7 @@ class Gemma3Generator:
                     in_str = False
                 continue
 
-            # not in string
+            
             if ch == '"':
                 in_str = True
                 continue
@@ -254,13 +251,9 @@ class Gemma3Generator:
                 if depth == 0:
                     return s[start : j + 1]
 
-            # Handle nested opposite braces/brackets too
+ 
             if opening == "{":
-                if ch == "[":
-                    # treat as nested structure by pushing depth via a simple trick:
-                    # count '['/']' separately is more correct, but easiest is to just
-                    # allow them without affecting object depth. JSON validity will be
-                    # enforced by json.loads afterwards.
+                if ch == "[":                
                     pass
             else:
                 if ch == "{":
@@ -279,7 +272,6 @@ class Gemma3Generator:
         inputs = self._build_inputs(prompt, image_paths=image_paths)
         effective_max_new_tokens = max_new_tokens or self.config.max_new_tokens
 
-        # Prefer pad_token_id if it exists; otherwise fall back to eos.
         tok = self.processor.tokenizer
         pad_id = tok.pad_token_id if tok.pad_token_id is not None else tok.eos_token_id
 
